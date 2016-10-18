@@ -215,10 +215,18 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
     }
   }
 
+  UIApplication *app = [UIApplication sharedApplication];
+  
   if (isJSNavigation) {
     decisionHandler(WKNavigationActionPolicyCancel);
-  }
-  else {
+  } else if ([self shouldOpenInExternalApp:url]) {
+    if ([app canOpenURL:url]) {
+      [app openURL:url];
+      decisionHandler(WKNavigationActionPolicyCancel);
+    } else {
+      decisionHandler(WKNavigationActionPolicyAllow);
+    }
+  } else {
     decisionHandler(WKNavigationActionPolicyAllow);
   }
 }
@@ -265,6 +273,11 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
   else if (_onLoadingFinish && !webView.loading && ![webView.URL.absoluteString isEqualToString:@"about:blank"]) {
     _onLoadingFinish([self baseEvent]);
   }
+}
+
+- (BOOL)shouldOpenInExternalApp:(NSURL *)URL {
+  NSSet *validSchemes = [NSSet setWithArray:@[@"http", @"https", @"about"]];
+  return ![validSchemes containsObject:URL.scheme];
 }
 
 @end
