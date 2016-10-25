@@ -275,6 +275,77 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
   }
 }
 
+- (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler
+{
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
+                                                                           message:message
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleCancel
+                                                    handler:^(UIAlertAction *action) {
+                                                      completionHandler();
+                                                    }]];
+
+  UIViewController *presentingController = RCTPresentedViewController();
+  if (presentingController == nil) {
+    RCTLogError(@"Tried to display JavaScript alert view but there is no application window. message: %@", message);
+    return;
+  }
+  [presentingController presentViewController:alertController animated:YES completion:^{}];
+}
+
+- (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt defaultText:(NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSString *))completionHandler
+{
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
+                                                                           message:prompt
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+  [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+    textField.text = defaultText;
+  }];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:^(UIAlertAction *action) {
+                                                      NSString *input = ((UITextField *)alertController.textFields.firstObject).text;
+                                                      completionHandler(input);
+                                                    }]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel"
+                                                      style:UIAlertActionStyleCancel
+                                                    handler:^(UIAlertAction *action) {
+                                                      completionHandler(nil);
+                                                    }]];
+
+  UIViewController *presentingController = RCTPresentedViewController();
+  if (presentingController == nil) {
+    RCTLogError(@"Tried to display JavaScript prompt view but there is no application window. prompt: %@", prompt);
+    return;
+  }
+  [presentingController presentViewController:alertController animated:YES completion:^{}];
+}
+
+- (void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler
+{
+  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
+                                                                           message:message
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleDefault
+                                                    handler:^(UIAlertAction *action) {
+                                                      completionHandler(YES);
+                                                    }]];
+  [alertController addAction:[UIAlertAction actionWithTitle:@"Cancel"
+                                                      style:UIAlertActionStyleCancel
+                                                    handler:^(UIAlertAction *action) {
+                                                      completionHandler(NO);
+                                                    }]];
+
+  UIViewController *presentingController = RCTPresentedViewController();
+  if (presentingController == nil) {
+    RCTLogError(@"Tried to display JavaScript confirm view but there is no application window. message: %@", message);
+    return;
+  }
+  [presentingController presentViewController:alertController animated:YES completion:^{}];
+}
+
 - (BOOL)shouldOpenInExternalApp:(NSURL *)URL {
   NSSet *validSchemes = [NSSet setWithArray:@[@"http", @"https", @"about"]];
   return ![validSchemes containsObject:URL.scheme];
